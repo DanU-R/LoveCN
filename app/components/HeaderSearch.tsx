@@ -1,57 +1,56 @@
 'use client';
-import { useState, useRef, useEffect } from 'react';
-import Link from 'next/link';
+
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 export default function HeaderSearch() {
-  const [query, setQuery] = useState('');
-  const [results, setResults] = useState<any[]>([]);
-  const [isOpen, setIsOpen] = useState(false);
-  const wrapperRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [query, setQuery] = useState(searchParams.get('q') || '');
 
-  const doSearch = async (val: string) => {
-    if (!val) { setResults([]); return; }
-    try {
-        const res = await fetch(`https://dramabos.asia/api/melolo/api/v1/search?q=${val}&lang=id`);
-        const data = await res.json();
-        setResults(data.data || []);
-    } catch (e) { console.error(e); }
-  };
-
-  const handleInput = (e: any) => {
-    setQuery(e.target.value);
-    setIsOpen(true);
-    setTimeout(() => doSearch(e.target.value), 500);
-  };
-
-  // Klik luar untuk tutup
   useEffect(() => {
-    document.addEventListener("mousedown", (e) => {
-        if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) setIsOpen(false);
-    });
-  }, []);
+    setQuery(searchParams.get('q') || '');
+  }, [searchParams]);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (query.trim()) {
+      router.push(`/?q=${encodeURIComponent(query)}`);
+    }
+  };
+
+  const handleClear = () => {
+    setQuery('');
+    router.push('/');
+  };
 
   return (
-    <div ref={wrapperRef} className="relative w-full md:w-80">
-      <input 
-        type="text" 
-        placeholder="Cari drama..." 
+    <form onSubmit={handleSearch} className="relative w-full max-w-md group">
+      <input
+        type="text"
         value={query}
-        onChange={handleInput}
-        className="w-full bg-white/10 border border-white/20 rounded-full py-2 px-5 text-sm focus:outline-none focus:border-red-600 transition-colors"
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Cari drama china..."
+        className="w-full bg-white/5 border border-white/10 rounded-full py-2 px-5 pr-10 focus:outline-none focus:ring-2 focus:ring-red-600 focus:bg-white/10 transition-all text-sm"
       />
-      {isOpen && results.length > 0 && (
-        <div className="absolute top-12 left-0 w-full bg-[#1a1a1a] rounded-xl shadow-xl overflow-hidden z-50 max-h-80 overflow-y-auto border border-white/10">
-            {results.map((d:any, i:number) => (
-                <Link key={i} href={`/drama/${d.id}?poster=${d.cover}`} className="flex gap-3 p-3 hover:bg-white/5 border-b border-white/5">
-                    <img src={d.cover} className="w-10 h-14 object-cover rounded"/>
-                    <div className="text-sm">
-                        <div className="font-bold text-white line-clamp-1">{d.title || d.drama_name}</div>
-                        <div className="text-xs text-gray-400">Series • {d.rating || 'N/A'}★</div>
-                    </div>
-                </Link>
-            ))}
-        </div>
+      
+      {query && (
+        <button
+          type="button"
+          onClick={handleClear}
+          className="absolute right-10 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white p-1"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
       )}
-    </div>
+
+      <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 group-hover:text-red-500 transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      </button>
+    </form>
   );
 }
