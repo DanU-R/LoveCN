@@ -186,7 +186,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
               return (
                 <Link 
                   key={idx} 
-                  href={`/drama/${item.id}?poster=${encodeURIComponent(item.cover)}`} 
+                  href={`/drama/${item.id}`} 
                   className="group block"
                 >
                   <div className="aspect-[2/3] relative overflow-hidden rounded-lg bg-[#1a1a1a]">

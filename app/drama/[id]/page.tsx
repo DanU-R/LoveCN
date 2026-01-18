@@ -60,16 +60,15 @@ async function getVideoUrl(vid: string): Promise<VideoData | null> {
   }
 }
 
-// --- HALAMAN UTAMA ---
 export default async function DramaPage({ 
   params, 
   searchParams 
 }: { 
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ vid?: string; poster?: string }>;
+  searchParams: Promise<{ vid?: string }>; // Hapus 'poster' dari sini
 }) {
   const { id } = await params;
-  const { vid, poster } = await searchParams;
+  const { vid } = await searchParams; // Hapus 'poster' dari sini
 
   // 1. Ambil Data Detail
   const drama = await getDramaDetail(id);
@@ -86,23 +85,21 @@ export default async function DramaPage({
   // 2. Normalisasi Data
   const title = drama.title || "Tanpa Judul";
   const videoList = drama.videos || [];
-  const mainCover = drama.cover || poster || "/placeholder.jpg";
-
-  // 3. Logic Episode Aktif & Next Episode
-  // Cari index episode yang sedang aktif
-  const currentIndex = vid 
-    ? videoList.findIndex((ep) => String(ep.vid) === vid) 
-    : 0; // Default index 0 (Episode 1)
   
-  const activeEpisode = videoList[currentIndex];
+  // PERUBAHAN DISINI: Kita ambil cover langsung dari data drama, tidak perlu dari URL lagi
+  const mainCover = drama.cover || "/placeholder.jpg"; 
+
+  // 3. Logic Episode Aktif
+  const activeEpisode = vid 
+    ? videoList.find((ep) => String(ep.vid) === vid) 
+    : videoList[0];
+  
   const activeVid = activeEpisode ? activeEpisode.vid : null;
   const activeNumber = activeEpisode ? activeEpisode.episode : 1;
 
-  // LOGIC AUTO NEXT: Ambil episode di index berikutnya (index + 1)
-  const nextEpisode = videoList[currentIndex + 1]; 
+  const nextEpisode = videoList[videoList.findIndex(e => e.vid === activeVid) + 1];
   const nextVid = nextEpisode ? nextEpisode.vid : null;
 
-  // 4. Ambil Video Stream
   const videoStream = activeVid ? await getVideoUrl(String(activeVid)) : null;
 
   return (
@@ -124,16 +121,14 @@ export default async function DramaPage({
         <div className="lg:col-span-2 space-y-0 md:space-y-4">
           <div className="relative w-full aspect-video bg-black md:rounded-xl overflow-hidden shadow-2xl border-b md:border border-white/10 sticky top-[57px] md:static z-40 group">
             {videoStream?.url ? (
-              // --- PASSING DATA KE PLAYER (Updated) ---
               <VideoPlayer 
                 key={String(activeVid)}
                 url={videoStream.url} 
                 poster={mainCover} 
                 vid={String(activeVid)}
-                dramaId={id}           // Kirim ID Drama
-                nextVid={nextVid}      // Kirim ID Next Episode
+                dramaId={id}           
+                nextVid={nextVid}      
               />
-              // ----------------------------------------
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500 bg-[#151515]">
                  <div className="w-10 h-10 border-4 border-red-600 border-t-transparent rounded-full animate-spin mb-4"></div>
@@ -142,7 +137,6 @@ export default async function DramaPage({
               </div>
             )}
             
-            {/* Indikator Next Episode (Muncul jika ada next episode) */}
             {nextEpisode && (
                 <div className="absolute bottom-4 right-4 bg-black/70 px-3 py-1 rounded text-xs text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                     Next: Episode {nextEpisode.episode}
@@ -152,25 +146,11 @@ export default async function DramaPage({
 
           {/* Info Drama */}
           <div className="p-4 md:p-5 bg-[#0a0a0a] md:bg-[#151515] md:rounded-xl md:border border-white/5">
-            <div className="flex justify-between items-start gap-4">
-                <div>
-                    <h2 className="text-xl md:text-2xl font-bold text-white mb-2">{title}</h2>
-                    <div className="flex flex-wrap gap-2 mb-4">
-                        <span className="text-xs bg-red-600 px-2 py-0.5 rounded text-white font-bold">HD</span>
-                        <span className="text-xs bg-white/10 px-2 py-0.5 rounded text-gray-300">Total {videoList.length} Eps</span>
-                    </div>
-                </div>
-                {/* Tombol Next Manual (Opsional, buat jaga-jaga) */}
-                {nextVid && (
-                    <Link 
-                        href={`/drama/${id}?vid=${nextVid}&poster=${encodeURIComponent(mainCover)}`}
-                        className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors"
-                    >
-                        Next Eps ▶
-                    </Link>
-                )}
+            <h2 className="text-xl md:text-2xl font-bold text-white mb-2">{title}</h2>
+            <div className="flex flex-wrap gap-2 mb-4">
+                <span className="text-xs bg-red-600 px-2 py-0.5 rounded text-white font-bold">HD</span>
+                <span className="text-xs bg-white/10 px-2 py-0.5 rounded text-gray-300">Total {videoList.length} Eps</span>
             </div>
-            
             <p className="text-gray-400 text-sm leading-relaxed whitespace-pre-line">
               {drama.intro || "Sinopsis tidak tersedia."}
             </p>
@@ -191,7 +171,8 @@ export default async function DramaPage({
                 return (
                   <Link 
                     key={ep.vid} 
-                    href={`/drama/${id}?vid=${ep.vid}&poster=${encodeURIComponent(mainCover)}`}
+                    // UPDATE LINK DI SINI: Hapus poster
+                    href={`/drama/${id}?vid=${ep.vid}`}
                     className={`
                       flex items-center gap-3 p-2 rounded-lg transition-all duration-200 group
                       ${isActive ? 'bg-red-600 text-white shadow-lg' : 'hover:bg-white/10 text-gray-300 bg-[#0a0a0a]'}
