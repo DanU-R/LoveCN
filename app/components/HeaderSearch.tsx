@@ -3,7 +3,15 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function HeaderSearch() {
+interface HeaderSearchProps {
+  placeholder?: string;
+  baseHref?: string; // default '/'
+}
+
+export default function HeaderSearch({
+  placeholder = 'Cari drama china...',
+  baseHref = '/',
+}: HeaderSearchProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [query, setQuery] = useState(searchParams.get('q') || '');
@@ -15,13 +23,13 @@ export default function HeaderSearch() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
-      router.push(`/?q=${encodeURIComponent(query)}`);
+      router.push(`${baseHref}?q=${encodeURIComponent(query)}`);
     }
   };
 
   const handleClear = () => {
     setQuery('');
-    router.push('/');
+    router.push(baseHref);
   };
 
   return (
@@ -30,10 +38,10 @@ export default function HeaderSearch() {
         type="text"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Cari drama china..."
+        placeholder={placeholder}
         className="w-full bg-white/5 border border-white/10 rounded-full py-2 px-5 pr-10 focus:outline-none focus:ring-2 focus:ring-red-600 focus:bg-white/10 transition-all text-sm"
       />
-      
+
       {query && (
         <button
           type="button"

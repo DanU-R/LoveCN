@@ -8,7 +8,9 @@ interface VideoPlayerProps {
   poster: string;
   vid: string;
   dramaId: string;
-  nextVid: string | null;
+  nextVid: string | null;  // episode_index of next episode
+  subtitleId?: string | null;
+  subtitleEn?: string | null;
 }
 
 export default function VideoPlayer({
@@ -16,21 +18,23 @@ export default function VideoPlayer({
   poster,
   vid,
   dramaId,
-  nextVid
+  nextVid,
+  subtitleId,
+  subtitleEn,
 }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const router = useRouter();
 
   const handleEnded = () => {
     if (nextVid) {
-      router.replace(`/drama/${dramaId}?vid=${nextVid}`);
+      router.replace(`/drama/${dramaId}?ep=${nextVid}`);
     }
   };
 
   return (
     <div className="w-full h-full bg-black relative">
       <video
-        key={vid}              // ⬅️ INI KUNCI UTAMA
+        key={vid}
         ref={videoRef}
         src={url}
         controls
@@ -39,17 +43,36 @@ export default function VideoPlayer({
         preload="auto"
         poster={poster}
         onEnded={handleEnded}
-                onPlay={() => {
-        document.querySelectorAll('video').forEach(v => {
+        onPlay={() => {
+          document.querySelectorAll('video').forEach((v) => {
             if (v !== videoRef.current) v.pause();
-        });
+          });
         }}
-
         className="w-full h-full object-contain"
-      />
+        crossOrigin="anonymous"
+      >
+        {/* Subtitle Bahasa Indonesia (default) */}
+        {subtitleId && (
+          <track
+            key={`id-${vid}`}
+            kind="subtitles"
+            src={subtitleId}
+            srcLang="id"
+            label="Indonesia"
+            default
+          />
+        )}
+        {/* Subtitle Bahasa Inggris */}
+        {subtitleEn && (
+          <track
+            key={`en-${vid}`}
+            kind="subtitles"
+            src={subtitleEn}
+            srcLang="en"
+            label="English"
+          />
+        )}
+      </video>
     </div>
   );
-  
 }
-
-
